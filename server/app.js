@@ -63,7 +63,15 @@ io.on("connection", (socket) => {
     const { emailId, ans } = data;
     const socketId = emailToSocketMapping.get(emailId);
     console.log("call accepted from ", emailId);
-    socket.to(socketId).emit("call-accepted", { ans });
+    socket.to(socketId).emit("call-accepted", { from: emailId, ans });
+  });
+  socket.on("nego:needed", ({ emailId, offer }) => {
+    const fromEmail = socketToEmailMapping.get(socket.id);
+    socket.to(emailId).emit("nego:needed", { from: fromEmail, offer });
+  });
+  socket.on("nego:done", ({ to, ans }) => {
+    const fromEmail = socketToEmailMapping.get(socket.id);
+    socket.to(to).emit("nego:final", { from: fromEmail, ans });
   });
 });
 
