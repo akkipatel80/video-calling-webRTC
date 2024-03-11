@@ -127,8 +127,18 @@ export default function Room() {
       <h4>You are connected to {remoteEmailId}</h4>
       <button onClick={(e) => sendStream(myStream)}>Send My Video</button>
       {remoteEmailId && <button onClick={getUserMediaStream}>Call</button>}
-      {myStream && <ReactPlayer url={myStream} playing muted />}
-      {remoteStream && <ReactPlayer url={remoteStream} playing />}
+      {myStream && (
+        <>
+          <ReactPlayer url={myStream} playing muted />
+          <h4>my stream</h4>
+        </>
+      )}
+      {remoteStream && (
+        <>
+          <ReactPlayer url={remoteStream} playing />
+          <h4>remote stream</h4>
+        </>
+      )}
     </div>
   );
 }
