@@ -8,8 +8,8 @@ export const useSocket = () => {
 
 export const SocketProvider = (props) => {
   const socket = io(
-    "http://localhost:8000",
-    // "https://22e8-2405-201-2024-a1f6-8de1-d485-e1c6-62e4.ngrok-free.app",
+    // "http://localhost:8000",
+    "https://635d-2405-201-2024-a1f6-85f9-ef59-1a5e-38a0.ngrok-free.app",
     {
       extraHeaders: {
         "ngrok-skip-browser-warning": "69420",

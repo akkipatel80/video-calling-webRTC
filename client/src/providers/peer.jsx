@@ -5,16 +5,7 @@ const PeerContext = createContext(null);
 export const usePeer = () => useContext(PeerContext);
 
 export const PeerProvider = (props) => {
-  const peer = useMemo(
-    () =>
-      new RTCPeerConnection({
-        urls: [
-          "stun:stun.l.google.com:19302",
-          "stun:global.stun.twilio.com:3478",
-        ],
-      }),
-    []
-  );
+  const peer = new RTCPeerConnection();
   const createOffer = async () => {
     const offer = await peer.createOffer();
     await peer.setLocalDescription(new RTCSessionDescription(offer));

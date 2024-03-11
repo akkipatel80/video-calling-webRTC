@@ -9,23 +9,20 @@ export default function Room() {
   const [remoteStream, setRemoteStream] = useState(null);
   const [remoteEmailId, setRemoteEmailId] = useState();
   const { peer, createOffer, createAnswer, setRemoteAns } = usePeer();
-
-  const handleNewUserJoined = useCallback(
-    async (data) => {
-      const { emailId } = data;
-      console.log("new user joined", emailId);
-      const offer = await createOffer();
-      socket.emit("call-user", { emailId, offer });
-      setRemoteEmailId(emailId);
-    },
-    [createOffer, socket]
-  );
+  const handleNewUserJoined = useCallback(async (data) => {
+    const { emailId } = data;
+    console.log("new user joined", emailId);
+    // const offer = await createOffer();
+    // socket.emit("call-user", { emailId, offer });
+    setRemoteEmailId(emailId);
+  }, []);
 
   const handleIncomingCall = useCallback(
     async (data) => {
       const { from, offer } = data;
+      console.log(remoteEmailId, "remoteEmailId");
       setRemoteEmailId(from);
-      const constraints = { audio: true, video: true };
+      const constraints = { audio: true, video: false };
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       setMyStream(stream);
       console.log("incoming call from", from, offer);
@@ -47,7 +44,7 @@ export default function Room() {
       const { ans } = data;
       console.log("call accepted", ans);
       await setRemoteAns(ans);
-      // sendStream();
+      sendStream();
     },
     [sendStream]
   );
@@ -55,9 +52,10 @@ export default function Room() {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       // Browser supports getUserMedia
 
-      const constraints = { audio: true, video: true };
+      const constraints = { audio: true, video: false };
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       const offer = await createOffer();
+      console.log("offer created");
       socket.emit("call-user", { emailId: remoteEmailId, offer });
       setMyStream(stream);
     } else {
@@ -68,13 +66,13 @@ export default function Room() {
 
   const handleNagotiation = useCallback(async () => {
     const offer = await createOffer();
-    console.log("nagotiation  called");
+    console.log("nagotiation  called", remoteEmailId, offer);
     socket.emit("nego:needed", { emailId: remoteEmailId, offer: offer });
-  }, []);
+  }, [remoteEmailId, socket]);
 
   const handleNagotiationIncoming = useCallback(
-    ({ from, offer }) => {
-      const ans = createAnswer(offer);
+    async ({ from, offer }) => {
+      const ans = await createAnswer(offer);
       socket.emit("nego:done", { to: from, ans });
     },
     [socket]
@@ -85,11 +83,19 @@ export default function Room() {
   }, []);
 
   useEffect(() => {
-    peer.addEventListener("track", async (e) => {
-      console.log("track event");
-      setRemoteStream(e.streams[0]);
-    });
-  }, []);
+    peer.ontrack = function ({ streams: [stream] }) {
+      console.log(remoteEmailId, "90", stream);
+      setRemoteStream(stream);
+    };
+  }, [peer]);
+
+  useEffect(() => {
+    peer.addEventListener("negotiationneeded", handleNagotiation);
+    console.log(remoteEmailId, "rrrrre");
+    return () => {
+      peer.removeEventListener("nagotiationneeded", handleNagotiation);
+    };
+  }, [handleNagotiation, peer, remoteEmailId]);
 
   useEffect(() => {
     socket.on("user-joined", handleNewUserJoined);
@@ -97,7 +103,7 @@ export default function Room() {
     socket.on("call-accepted", handleCallAccepted);
     socket.on("nego:needed", handleNagotiationIncoming);
     socket.on("nego:final", handleNagotiationFinal);
-
+    console.log(remoteEmailId, "110");
     return () => {
       socket.off("user-joined", handleNewUserJoined);
       socket.off("incoming-call", handleIncomingCall);
@@ -113,13 +119,6 @@ export default function Room() {
     handleNagotiationFinal,
     socket,
   ]);
-
-  useEffect(() => {
-    peer.addEventListener("nagotiationneeded", handleNagotiation);
-    return () => {
-      peer.removeEventListener("nagotiationneeded", handleNagotiation);
-    };
-  }, [handleNagotiation]);
 
   return (
     <div className="room-container">

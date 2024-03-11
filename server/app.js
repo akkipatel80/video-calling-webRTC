@@ -48,30 +48,34 @@ io.on("connection", (socket) => {
     console.log("user", emailId, "joined room", roomId);
     emailToSocketMapping.set(emailId, socket.id);
     socketToEmailMapping.set(socket.id, emailId);
+    io.to(roomId).emit("user-joined", { emailId, roomId });
     socket.join(roomId);
-    socket.emit("joined-room", { roomId });
-    socket.broadcast.to(roomId).emit("user-joined", { emailId });
+    io.to(socket.id).emit("joined-room", { roomId });
   });
   socket.on("call-user", (data) => {
     const { emailId, offer } = data;
     console.log("call from", emailId);
     const fromEmail = socketToEmailMapping.get(socket.id);
     const socketId = emailToSocketMapping.get(emailId);
-    socket.to(socketId).emit("incoming-call", { from: fromEmail, offer });
+    io.to(socketId).emit("incoming-call", { from: fromEmail, offer });
   });
   socket.on("call-accepted", (data) => {
     const { emailId, ans } = data;
     const socketId = emailToSocketMapping.get(emailId);
     console.log("call accepted from ", emailId);
-    socket.to(socketId).emit("call-accepted", { from: emailId, ans });
+    io.to(socketId).emit("call-accepted", { from: emailId, ans });
   });
   socket.on("nego:needed", ({ emailId, offer }) => {
+    console.log("nego:needed", offer);
     const fromEmail = socketToEmailMapping.get(socket.id);
-    socket.to(emailId).emit("nego:needed", { from: fromEmail, offer });
+    const socketId = emailToSocketMapping.get(emailId);
+    io.to(socketId).emit("nego:needed", { from: fromEmail, offer });
   });
   socket.on("nego:done", ({ to, ans }) => {
+    console.log("nego:done", ans);
     const fromEmail = socketToEmailMapping.get(socket.id);
-    socket.to(to).emit("nego:final", { from: fromEmail, ans });
+    const socketId = emailToSocketMapping.get(to);
+    io.to(socketId).emit("nego:final", { from: fromEmail, ans });
   });
 });
 
