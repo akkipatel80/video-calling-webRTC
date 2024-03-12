@@ -33,7 +33,7 @@ export default function Room() {
   );
 
   const sendStream = useCallback(async () => {
-    console.log(myStream);
+    console.log("send my stream");
     for (const track of myStream.getTracks()) {
       peer.addTrack(track, myStream);
     }
@@ -55,14 +55,14 @@ export default function Room() {
       const constraints = { audio: true, video: false };
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       const offer = await createOffer();
-      console.log("offer created");
+      console.log("offer created", remoteEmailId);
       socket.emit("call-user", { emailId: remoteEmailId, offer });
       setMyStream(stream);
     } else {
       // Handle lack of support
       console.error("getUserMedia is not supported in this browser");
     }
-  }, [remoteEmailId]);
+  }, [remoteEmailId, socket]);
 
   const handleNagotiation = useCallback(async () => {
     const offer = await createOffer();
@@ -83,19 +83,22 @@ export default function Room() {
   }, []);
 
   useEffect(() => {
-    peer.ontrack = function ({ streams: [stream] }) {
-      console.log(remoteEmailId, "90", stream);
-      setRemoteStream(stream);
-    };
+    peer.addEventListener("track", (e) => {
+      console.log(e, "track");
+    });
+
+    // peer.ontrack = function ({ streams: [stream] }) {
+    //   console.log(remoteEmailId, "ontrack", stream);
+    //   setRemoteStream(stream);
+    // };
   }, [peer]);
 
   useEffect(() => {
     peer.addEventListener("negotiationneeded", handleNagotiation);
-    console.log(remoteEmailId, "rrrrre");
     return () => {
       peer.removeEventListener("nagotiationneeded", handleNagotiation);
     };
-  }, [handleNagotiation, peer, remoteEmailId]);
+  }, [handleNagotiation]);
 
   useEffect(() => {
     socket.on("user-joined", handleNewUserJoined);
